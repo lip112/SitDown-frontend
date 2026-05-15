@@ -22,6 +22,8 @@ import type {
 
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
+const API_PATH_PREFIX = '/api';
+
 interface ApiClientOptions {
   baseUrl: string;
   getAccessToken?: () => string | null;
@@ -50,7 +52,7 @@ export class ApiClient {
   private fetcher: Fetcher;
 
   constructor(options: ApiClientOptions) {
-    this.baseUrl = options.baseUrl.replace(/\/$/, '');
+    this.baseUrl = normalizeBaseUrl(options.baseUrl);
     this.getAccessToken = options.getAccessToken;
     this.onUnauthorized = options.onUnauthorized;
     this.fetcher = options.fetcher ?? globalThis.fetch.bind(globalThis);
@@ -200,7 +202,7 @@ export class ApiClient {
         ? JSON.stringify(options.body)
         : undefined;
 
-    const response = await this.fetcher(`${this.baseUrl}${path}`, {
+    const response = await this.fetcher(`${this.baseUrl}${apiPath(path)}`, {
       method: options.method ?? 'GET',
       headers,
       body: requestBody,
@@ -237,6 +239,16 @@ export class ApiClient {
     const message = await response.text();
     return new ApiError(message || '요청을 처리하지 못했습니다.', response.status);
   }
+}
+
+function normalizeBaseUrl(baseUrl: string): string {
+  const trimmed = baseUrl.replace(/\/$/, '');
+  return trimmed.endsWith(API_PATH_PREFIX) ? trimmed.slice(0, -API_PATH_PREFIX.length) : trimmed;
+}
+
+function apiPath(path: string): string {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return normalizedPath.startsWith(`${API_PATH_PREFIX}/`) ? normalizedPath : `${API_PATH_PREFIX}${normalizedPath}`;
 }
 
 function queryString(params: Record<string, unknown>): string {

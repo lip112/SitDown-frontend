@@ -32,6 +32,20 @@ describe('ApiClient', () => {
     );
   });
 
+  it('prefixes API paths when the base URL is the origin', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ accessToken: 'token' }),
+    });
+    const client = new ApiClient({ baseUrl: 'http://localhost:8080', fetcher: fetchMock });
+
+    await client.post('/auth/login', {});
+
+    expect(fetchMock).toHaveBeenCalledWith('http://localhost:8080/api/auth/login', expect.any(Object));
+  });
+
   it('returns undefined for no-content responses', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
