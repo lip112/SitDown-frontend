@@ -11,7 +11,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
-  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/spaces';
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/home';
 
   if (isAuthenticated) {
     navigate(from, { replace: true });

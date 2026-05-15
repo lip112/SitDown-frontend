@@ -158,8 +158,8 @@ export class ApiClient {
     return this.patch(`/reservations/${id}/extend`, { additionalMinutes });
   }
 
-  cancelReservation(id: string): Promise<void> {
-    return this.delete(`/reservations/${id}`);
+  cancelReservation(id: string, reason?: string): Promise<void> {
+    return this.delete(`/reservations/${id}${queryString({ reason })}`);
   }
 
   getStats(period: 'WEEKLY' | 'MONTHLY' | 'YEARLY' = 'WEEKLY'): Promise<StatResponse> {

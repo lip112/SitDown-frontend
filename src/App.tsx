@@ -1,10 +1,12 @@
 import { Navigate, Outlet, Route, BrowserRouter as Router, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { Layout } from './components/Layout';
+import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { NoticesPage } from './pages/NoticesPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { ReservationCompletePage } from './pages/ReservationCompletePage';
 import { ReservationsPage } from './pages/ReservationsPage';
 import { SignupPage } from './pages/SignupPage';
 import { SpaceDetailPage } from './pages/SpaceDetailPage';
@@ -20,10 +22,12 @@ export default function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route element={<RequireAuth />}>
             <Route element={<Layout />}>
-              <Route index element={<Navigate to="/spaces" replace />} />
+              <Route index element={<Navigate to="/home" replace />} />
+              <Route path="/home" element={<HomePage />} />
               <Route path="/spaces" element={<SpacesPage />} />
               <Route path="/spaces/:id" element={<SpaceDetailPage />} />
               <Route path="/reservations" element={<ReservationsPage />} />
+              <Route path="/reservations/complete" element={<ReservationCompletePage />} />
               <Route path="/notices" element={<NoticesPage />} />
               <Route path="/profile" element={<ProfilePage />} />
             </Route>

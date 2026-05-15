@@ -59,4 +59,18 @@ describe('ApiClient', () => {
       message: '이미 해당 시간대에 예약된 좌석입니다.',
     });
   });
+
+  it('passes optional cancel reason as a query parameter', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 204,
+      headers: new Headers(),
+      text: async () => '',
+    });
+    const client = new ApiClient({ baseUrl: '/api', fetcher: fetchMock });
+
+    await client.cancelReservation('rsv-1', '일정 변경');
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/reservations/rsv-1?reason=%EC%9D%BC%EC%A0%95+%EB%B3%80%EA%B2%BD', expect.any(Object));
+  });
 });

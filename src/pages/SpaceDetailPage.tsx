@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Heart, MapPin, RefreshCw, Timer, Users } from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import type {
   CongestionPredictionResponse,
@@ -14,14 +14,17 @@ import { spaceImage } from '../data/catalog';
 import {
   categoryLabel,
   formatDate,
+  formatMinutes,
   getDefaultDateTimeLocal,
   getOccupancyRate,
   toApiLocalDateTime,
   toKstOffsetDateTime,
 } from '../utils/format';
+import { getDurationMinutes, validateReservationWindow } from '../utils/reservation';
 
 export function SpaceDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const { api } = useAuth();
   const [space, setSpace] = useState<SpaceDetailResponse | null>(null);
   const [seatLayout, setSeatLayout] = useState<SeatLayoutResponse | null>(null);
@@ -97,21 +100,31 @@ export function SpaceDetailPage() {
       setNotice('예약할 좌석을 먼저 선택해 주세요.');
       return;
     }
+    if (!space) {
+      setNotice('공간 정보를 먼저 불러와 주세요.');
+      return;
+    }
+
+    const validationError = validateReservationWindow(startAt, endAt, {
+      openTime: space.openTime,
+      closeTime: space.closeTime,
+      maxReservationHours: space.maxReservationHours,
+    });
+    if (validationError) {
+      setNotice(validationError);
+      return;
+    }
 
     setSubmitting(true);
     setNotice('');
 
     try {
-      await api.createReservation({
+      const reservation = await api.createReservation({
         seatId: selectedSeat.id,
         startAt: toApiLocalDateTime(startAt),
         endAt: toApiLocalDateTime(endAt),
       });
-      setNotice(`${selectedSeat.label} 좌석 예약이 완료되었습니다.`);
-      if (id) {
-        setSeatLayout(await api.getSeats(id, toKstOffsetDateTime(startAt)));
-      }
-      setSelectedSeat(null);
+      navigate('/reservations/complete', { state: { reservation } });
     } catch (err) {
       setNotice(err instanceof Error ? err.message : '예약에 실패했습니다.');
     } finally {
@@ -133,6 +146,7 @@ export function SpaceDetailPage() {
   }
 
   const occupancy = getOccupancyRate(space.totalSeats, space.availableSeats);
+  const durationMinutes = Math.max(getDurationMinutes(startAt, endAt), 0);
 
   return (
     <section className="page-section detail-section">
@@ -206,6 +220,17 @@ export function SpaceDetailPage() {
           <form onSubmit={handleReserve}>
             <h2>좌석 예약</h2>
             <p className="muted">{selectedSeat ? `${selectedSeat.label} 좌석 선택됨` : '예약 가능한 좌석을 선택하세요.'}</p>
+            {selectedSeat && (
+              <div className="selected-seat-card">
+                <strong>{selectedSeat.label}</strong>
+                <span>{selectedSeat.row}행 {selectedSeat.column}열</span>
+                <div className="feature-row">
+                  {selectedSeat.features.length > 0
+                    ? selectedSeat.features.map((feature) => <span key={feature}>{feature}</span>)
+                    : <span>좌석 특징 없음</span>}
+                </div>
+              </div>
+            )}
             <label>
               시작 시간
               <input type="datetime-local" value={startAt} onChange={(event) => setStartAt(event.target.value)} required />
@@ -222,6 +247,10 @@ export function SpaceDetailPage() {
           <div className="reservation-note">
             <span>운영 시간</span>
             <strong>{space.openTime.slice(0, 5)}-{space.closeTime.slice(0, 5)}</strong>
+          </div>
+          <div className="reservation-note">
+            <span>이용 시간</span>
+            <strong>{formatMinutes(durationMinutes)}</strong>
           </div>
         </aside>
       </div>

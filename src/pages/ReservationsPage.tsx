@@ -4,6 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import type { PageResponse, ReservationFilter, ReservationSummary } from '../api/types';
 import { reservationFilters } from '../data/catalog';
 import { formatDateTime, normalizePage, reservationStatusLabel } from '../utils/format';
+import { formatSecondsAsClock } from '../utils/reservation';
 import { EmptyState } from '../components/EmptyState';
 import { ReservationPill } from '../components/StatusPill';
 
@@ -43,8 +44,13 @@ export function ReservationsPage() {
   }
 
   async function cancelReservation(id: string) {
+    const reason = window.prompt('취소 사유를 입력해 주세요. 입력하지 않아도 취소할 수 있습니다.', '');
+    if (reason === null) {
+      return;
+    }
+
     try {
-      await api.cancelReservation(id);
+      await api.cancelReservation(id, reason.trim() || undefined);
       await loadReservations();
     } catch (err) {
       setMessage(err instanceof Error ? err.message : '예약을 취소하지 못했습니다.');
@@ -92,7 +98,7 @@ export function ReservationsPage() {
                   {formatDateTime(reservation.startAt)} - {formatDateTime(reservation.endAt)}
                 </p>
                 {reservation.remainingSeconds !== null && (
-                  <p className="muted">남은 시간 {Math.max(Math.floor(reservation.remainingSeconds / 60), 0)}분</p>
+                  <ReservationCountdown seconds={reservation.remainingSeconds} />
                 )}
               </div>
               <div className="reservation-actions">
@@ -114,4 +120,22 @@ export function ReservationsPage() {
       )}
     </section>
   );
+}
+
+function ReservationCountdown({ seconds }: { seconds: number }) {
+  const [remainingSeconds, setRemainingSeconds] = useState(seconds);
+
+  useEffect(() => {
+    setRemainingSeconds(seconds);
+  }, [seconds]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setRemainingSeconds((value) => Math.max(value - 1, 0));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return <p className="countdown-text">남은 시간 {formatSecondsAsClock(remainingSeconds)}</p>;
 }

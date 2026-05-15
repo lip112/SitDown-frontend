@@ -1,4 +1,4 @@
-import { Bell, CalendarDays, DoorOpen, LogOut, UserRound } from 'lucide-react';
+import { Bell, CalendarDays, DoorOpen, Home, LogOut, UserRound } from 'lucide-react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import { API_BASE_URL } from '../config/env';
@@ -9,11 +9,12 @@ export function Layout() {
   return (
     <div className="app-shell">
       <header className="top-nav">
-        <NavLink to="/spaces" className="brand" aria-label="UNIV SITDOWN 홈">
+        <NavLink to="/home" className="brand" aria-label="UNIV SITDOWN 홈">
           <span className="brand-mark">S</span>
           <span>UNIV SITDOWN</span>
         </NavLink>
         <nav className="nav-links" aria-label="주요 메뉴">
+          <NavLink to="/home"><Home size={18} />홈</NavLink>
           <NavLink to="/spaces"><DoorOpen size={18} />공간</NavLink>
           <NavLink to="/reservations"><CalendarDays size={18} />예약</NavLink>
           <NavLink to="/notices"><Bell size={18} />공지</NavLink>
