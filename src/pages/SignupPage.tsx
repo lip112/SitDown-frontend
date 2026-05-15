@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { ArrowLeft, MailCheck } from 'lucide-react';
+import { ArrowLeft, UserPlus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 import type { Affiliation } from '../api/types';
@@ -9,39 +9,17 @@ export function SignupPage() {
   const { api } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [code, setCode] = useState('');
-  const [verified, setVerified] = useState(false);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [affiliation, setAffiliation] = useState<Affiliation | ''>('UNDERGRADUATE');
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-
-  async function sendCode() {
-    setError('');
-    try {
-      await api.sendEmailCode(email);
-      setMessage('인증 코드가 발송되었습니다.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '인증 코드 발송에 실패했습니다.');
-    }
-  }
-
-  async function verifyCode() {
-    setError('');
-    try {
-      const response = await api.verifyEmailCode(email, code);
-      setVerified(response.verified);
-      setMessage(response.verified ? '이메일 인증이 완료되었습니다.' : '인증 코드를 다시 확인해 주세요.');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '이메일 인증에 실패했습니다.');
-    }
-  }
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setError('');
+    setSubmitting(true);
 
     try {
       await api.signup({
@@ -54,6 +32,8 @@ export function SignupPage() {
       navigate('/login', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : '회원가입에 실패했습니다.');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -62,40 +42,22 @@ export function SignupPage() {
       <section className="auth-panel signup-panel">
         <Link to="/login" className="text-link"><ArrowLeft size={16} />로그인으로 돌아가기</Link>
         <div className="auth-panel-head">
-          <MailCheck size={28} />
+          <UserPlus size={28} />
           <div>
             <h1>회원가입</h1>
-            <p>이메일 인증 후 계정을 만듭니다.</p>
+            <p>이메일 중복 확인 후 계정을 만듭니다.</p>
           </div>
         </div>
         <form onSubmit={handleSubmit} className="form-stack">
           <label>
             이메일
-            <div className="inline-field">
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                required
-              />
-              <button type="button" className="secondary-button" onClick={() => void sendCode()}>
-                발송
-              </button>
-            </div>
-          </label>
-          <label>
-            인증 코드
-            <div className="inline-field">
-              <input
-                value={code}
-                onChange={(event) => setCode(event.target.value)}
-                placeholder="6자리"
-                maxLength={6}
-              />
-              <button type="button" className="secondary-button" onClick={() => void verifyCode()}>
-                확인
-              </button>
-            </div>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="student@univ.com"
+              required
+            />
           </label>
           <label>
             이름
@@ -126,9 +88,8 @@ export function SignupPage() {
               ))}
             </select>
           </label>
-          {message && <p className="form-success">{message}</p>}
           {error && <p className="form-error">{error}</p>}
-          <button type="submit" className="primary-button" disabled={!verified}>
+          <button type="submit" className="primary-button" disabled={submitting}>
             가입 완료
           </button>
         </form>

@@ -86,14 +86,6 @@ export class ApiClient {
     return this.post('/auth/login', { email, password });
   }
 
-  sendEmailCode(email: string): Promise<{ email: string; code: string; expiresAt: string }> {
-    return this.post('/auth/email/send', { email });
-  }
-
-  verifyEmailCode(email: string, code: string): Promise<{ verified: boolean }> {
-    return this.post('/auth/email/verify', { email, code });
-  }
-
   signup(request: SignupRequest): Promise<{ userId: string; email: string; name: string; createdAt: string }> {
     return this.post('/auth/signup', request);
   }
