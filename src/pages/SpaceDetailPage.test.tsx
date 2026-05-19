@@ -79,6 +79,21 @@ describe('SpaceDetailPage', () => {
     expect(screen.getByRole('button', { name: 'A01' })).toBeDisabled();
   });
 
+  it('lets users manually synchronize seat status', async () => {
+    getSeatsMock
+      .mockResolvedValueOnce(seatLayout('AVAILABLE'))
+      .mockResolvedValueOnce(seatLayout('RESERVED'));
+    renderSpaceDetailPage();
+
+    expect(await screen.findByRole('button', { name: 'A01' })).toBeEnabled();
+    fireEvent.click(screen.getByRole('button', { name: '좌석 동기화' }));
+
+    await waitFor(() => {
+      expect(getSeatsMock).toHaveBeenCalledTimes(2);
+    });
+    expect(screen.getByRole('button', { name: 'A01' })).toBeDisabled();
+  });
+
   it('refreshes seat status after a reservation conflict', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date('2026-05-19T09:00:00+09:00'));

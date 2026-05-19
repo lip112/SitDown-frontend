@@ -862,7 +862,8 @@ main {
   gap: 12px;
 }
 
-.info-row span {
+.info-row span,
+.info-row button {
   min-height: 70px;
   display: flex;
   align-items: center;
@@ -871,6 +872,21 @@ main {
   border: 1px solid var(--hairline-soft);
   border-radius: 14px;
   font-weight: 600;
+}
+
+.info-row button {
+  text-align: left;
+}
+
+.info-row button:hover:not(:disabled),
+.info-row button:focus-visible {
+  border-color: var(--ink);
+  background: var(--surface-soft);
+}
+
+.info-row button:disabled {
+  color: var(--muted-soft);
+  cursor: not-allowed;
 }
 
 .detail-block {

@@ -35,6 +35,7 @@ export function SpaceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
+  const [syncingSeats, setSyncingSeats] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const mainImage = useMemo(() => spaceImage(space?.images?.[0], 0), [space?.images]);
@@ -133,6 +134,19 @@ export function SpaceDetailPage() {
     }
   }
 
+  async function handleManualSync() {
+    setSyncingSeats(true);
+    setNotice('');
+
+    try {
+      await refreshSeatLayout();
+    } catch (err) {
+      setNotice(err instanceof Error ? err.message : '좌석 상태를 동기화하지 못했습니다.');
+    } finally {
+      setSyncingSeats(false);
+    }
+  }
+
   async function handleReserve(event: FormEvent) {
     event.preventDefault();
     if (!selectedSeat) {
@@ -221,7 +235,10 @@ export function SpaceDetailPage() {
           <div className="info-row">
             <span><Users size={20} />총 {space.totalSeats}석</span>
             <span><Timer size={20} />최대 {space.maxReservationHours}시간</span>
-            <span><RefreshCw size={20} />실시간 좌석 반영</span>
+            <button type="button" className="info-action" onClick={() => void handleManualSync()} disabled={syncingSeats}>
+              <RefreshCw size={20} />
+              {syncingSeats ? '동기화 중' : '좌석 동기화'}
+            </button>
           </div>
 
           <section className="detail-block">
