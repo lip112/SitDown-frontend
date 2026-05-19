@@ -35,6 +35,11 @@ export interface SignupRequest {
   affiliation?: Affiliation;
 }
 
+export interface EmailCheckResponse {
+  email: string;
+  available: boolean;
+}
+
 export interface UserResponse {
   id: string;
   email: string;

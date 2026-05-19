@@ -18,6 +18,7 @@ import type {
   SpaceListItemResponse,
   StatResponse,
   UserResponse,
+  EmailCheckResponse,
 } from './types';
 
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
@@ -84,6 +85,10 @@ export class ApiClient {
 
   login(email: string, password: string): Promise<LoginResponse> {
     return this.post('/auth/login', { email, password });
+  }
+
+  checkEmail(email: string): Promise<EmailCheckResponse> {
+    return this.post('/auth/email/check', { email });
   }
 
   signup(request: SignupRequest): Promise<{ userId: string; email: string; name: string; createdAt: string }> {

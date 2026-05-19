@@ -1,10 +1,10 @@
-import { FormEvent, useState } from 'react';
-import { ArrowRight, Building2, ShieldCheck } from 'lucide-react';
+import { FormEvent, useEffect, useState } from 'react';
+import { ArrowRight, Building2, Eye, ShieldCheck } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
 
 export function LoginPage() {
-  const { login, isAuthenticated } = useAuth();
+  const { continueAsGuest, login, isAuthenticated, isGuest } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState('');
@@ -13,9 +13,11 @@ export function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? '/home';
 
-  if (isAuthenticated) {
-    navigate(from, { replace: true });
-  }
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(isGuest ? publicGuestDestination(from) : from, { replace: true });
+    }
+  }, [from, isAuthenticated, isGuest, navigate]);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -30,6 +32,11 @@ export function LoginPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  function handleGuestLogin() {
+    continueAsGuest();
+    navigate(publicGuestDestination(from), { replace: true });
   }
 
   return (
@@ -80,6 +87,10 @@ export function LoginPage() {
             로그인 <ArrowRight size={18} />
           </button>
         </form>
+        <button type="button" className="secondary-button full guest-login-button" onClick={handleGuestLogin}>
+          <Eye size={18} />
+          게스트로 둘러보기
+        </button>
         <div className="auth-bottom">
           <span><ShieldCheck size={16} />JWT 인증으로 연결됩니다.</span>
           <Link to="/signup">회원가입</Link>
@@ -87,4 +98,8 @@ export function LoginPage() {
       </section>
     </main>
   );
+}
+
+function publicGuestDestination(path: string): string {
+  return path.startsWith('/spaces') || path.startsWith('/notices') ? path : '/spaces';
 }

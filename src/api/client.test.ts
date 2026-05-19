@@ -46,6 +46,28 @@ describe('ApiClient', () => {
     expect(fetchMock).toHaveBeenCalledWith('http://localhost:8080/api/auth/login', expect.any(Object));
   });
 
+  it('checks email availability through the auth API', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ email: 'student@univ.com', available: true }),
+    });
+    const client = new ApiClient({ baseUrl: '/api', fetcher: fetchMock });
+
+    await expect(client.checkEmail('student@univ.com')).resolves.toEqual({
+      email: 'student@univ.com',
+      available: true,
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/auth/email/check',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ email: 'student@univ.com' }),
+      }),
+    );
+  });
+
   it('returns undefined for no-content responses', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

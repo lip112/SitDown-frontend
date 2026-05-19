@@ -601,7 +601,8 @@ main {
   cursor: not-allowed;
 }
 
-.primary-button.full {
+.primary-button.full,
+.secondary-button.full {
   width: 100%;
 }
 
@@ -631,6 +632,7 @@ main {
 }
 
 .form-stack label,
+.form-stack .form-field,
 .reservation-card label {
   display: grid;
   gap: 7px;
@@ -662,6 +664,14 @@ main {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
+}
+
+.inline-field .secondary-button {
+  min-height: 56px;
+}
+
+.guest-login-button {
+  margin-top: 12px;
 }
 
 .form-error,
