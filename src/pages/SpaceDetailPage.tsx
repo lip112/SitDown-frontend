@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
 import { Heart, MapPin, RefreshCw, Timer, Users } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
@@ -39,6 +39,23 @@ export function SpaceDetailPage() {
 
   const mainImage = useMemo(() => spaceImage(space?.images?.[0], 0), [space?.images]);
 
+  const refreshSeatLayout = useCallback(async () => {
+    if (!id) {
+      return;
+    }
+
+    const seatsResponse = await api.getSeats(id, toKstOffsetDateTime(startAt));
+    setSeatLayout(seatsResponse);
+    setSelectedSeat((currentSeat) => {
+      if (!currentSeat) {
+        return null;
+      }
+
+      const nextSeat = seatsResponse.seats.find((seat) => seat.id === currentSeat.id);
+      return nextSeat?.status === 'AVAILABLE' ? nextSeat : null;
+    });
+  }, [api, id, startAt]);
+
   useEffect(() => {
     if (!id) {
       return;
@@ -76,6 +93,28 @@ export function SpaceDetailPage() {
       cancelled = true;
     };
   }, [api, id, startAt]);
+
+  useEffect(() => {
+    if (!id) {
+      return undefined;
+    }
+
+    function refreshIfVisible() {
+      if (document.visibilityState === 'hidden') {
+        return;
+      }
+
+      void refreshSeatLayout().catch(() => undefined);
+    }
+
+    window.addEventListener('focus', refreshIfVisible);
+    document.addEventListener('visibilitychange', refreshIfVisible);
+
+    return () => {
+      window.removeEventListener('focus', refreshIfVisible);
+      document.removeEventListener('visibilitychange', refreshIfVisible);
+    };
+  }, [id, refreshSeatLayout]);
 
   async function toggleFavorite() {
     if (!space) {
@@ -127,6 +166,9 @@ export function SpaceDetailPage() {
       navigate('/reservations/complete', { state: { reservation } });
     } catch (err) {
       setNotice(err instanceof Error ? err.message : '예약에 실패했습니다.');
+      if (isConflictError(err)) {
+        await refreshSeatLayout().catch(() => undefined);
+      }
     } finally {
       setSubmitting(false);
     }
@@ -256,4 +298,11 @@ export function SpaceDetailPage() {
       </div>
     </section>
   );
+}
+
+function isConflictError(error: unknown): boolean {
+  return typeof error === 'object'
+    && error !== null
+    && 'status' in error
+    && (error as { status?: unknown }).status === 409;
 }
