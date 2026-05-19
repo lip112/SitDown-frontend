@@ -20,4 +20,10 @@ describe('reservation utilities', () => {
     expect(validateReservationWindow('2026-05-15T08:30', '2026-05-15T10:00', policy)).toBe('운영 시간 안에서만 예약할 수 있습니다.');
     expect(validateReservationWindow('2026-05-15T10:00', '2026-05-15T15:00', policy)).toBe('최대 이용 시간은 4시간입니다.');
   });
+
+  it('allows reservations before midnight when close time is 00:00', () => {
+    const policy = { openTime: '06:00:00', closeTime: '00:00:00', maxReservationHours: 4 };
+
+    expect(validateReservationWindow('2026-05-19T23:22', '2026-05-19T23:42', policy)).toBeNull();
+  });
 });

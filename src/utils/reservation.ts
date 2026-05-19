@@ -52,7 +52,7 @@ export function validateReservationWindow(
 function isWithinOperatingHours(startAt: string, endAt: string, openTime: string, closeTime: string): boolean {
   const startDate = startAt.slice(0, 10);
   const endDate = endAt.slice(0, 10);
-  if (!startDate || startDate !== endDate) {
+  if (!startDate || !endDate) {
     return false;
   }
 
@@ -60,11 +60,29 @@ function isWithinOperatingHours(startAt: string, endAt: string, openTime: string
   const endMinute = timePartToMinutes(endAt.slice(11, 16));
   const openMinute = timePartToMinutes(openTime.slice(0, 5));
   const closeMinute = timePartToMinutes(closeTime.slice(0, 5));
+  const closesAtMidnight = closeMinute === 0;
 
-  return startMinute >= openMinute && endMinute <= closeMinute;
+  if (closesAtMidnight && isNextDate(startDate, endDate)) {
+    return startMinute >= openMinute && endMinute === 0;
+  }
+
+  if (startDate !== endDate) {
+    return false;
+  }
+
+  return startMinute >= openMinute && (closesAtMidnight || endMinute <= closeMinute);
 }
 
 function timePartToMinutes(value: string): number {
   const [hours, minutes] = value.split(':').map(Number);
   return hours * 60 + minutes;
+}
+
+function isNextDate(startDate: string, endDate: string): boolean {
+  const [startYear, startMonth, startDay] = startDate.split('-').map(Number);
+  const [endYear, endMonth, endDay] = endDate.split('-').map(Number);
+  const start = Date.UTC(startYear, startMonth - 1, startDay);
+  const end = Date.UTC(endYear, endMonth - 1, endDay);
+
+  return end - start === 24 * 60 * 60 * 1000;
 }
