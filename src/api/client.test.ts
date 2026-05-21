@@ -68,6 +68,30 @@ describe('ApiClient', () => {
     );
   });
 
+  it('uploads profile images as multipart form data', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ profileImageUrl: '/uploads/profiles/me/profile.jpg' }),
+    });
+    const client = new ApiClient({ baseUrl: '/api', fetcher: fetchMock });
+    const file = new File(['profile'], 'profile.jpg', { type: 'image/jpeg' });
+
+    await client.uploadProfileImage(file);
+
+    const [, init] = fetchMock.mock.calls[0];
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/users/me/profile-image',
+      expect.objectContaining({
+        method: 'POST',
+        body: expect.any(FormData),
+      }),
+    );
+    expect((init?.body as FormData).get('file')).toBe(file);
+    expect(init?.headers).not.toHaveProperty('Content-Type');
+  });
+
   it('returns undefined for no-content responses', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,

@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from 'react';
+import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, UserRound } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import type { Affiliation, StatResponse, UserResponse } from '../api/types';
@@ -13,6 +13,7 @@ export function ProfilePage() {
   const [phone, setPhone] = useState('');
   const [affiliation, setAffiliation] = useState<Affiliation | ''>('');
   const [message, setMessage] = useState('');
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,13 +53,35 @@ export function ProfilePage() {
     }
   }
 
+  async function handleProfileImageChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+
+    setMessage('');
+    setIsUploadingImage(true);
+
+    try {
+      const response = await api.uploadProfileImage(file);
+      setProfile(response);
+      await refreshUser();
+      setMessage('프로필 사진이 저장되었습니다.');
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : '프로필 사진을 업로드하지 못했습니다.');
+    } finally {
+      setIsUploadingImage(false);
+      event.target.value = '';
+    }
+  }
+
   const maxMinutes = Math.max(...(stat?.daily.map((item) => item.minutes) ?? [1]), 1);
 
   return (
     <section className="page-section profile-grid">
       <div className="profile-card">
         <div className="avatar">
-          {profile?.profileImageUrl ? <img src={profile.profileImageUrl} alt="" /> : <UserRound size={32} />}
+          {profile?.profileImageUrl ? <img src={profile.profileImageUrl} alt="프로필 사진" /> : <UserRound size={32} />}
         </div>
         <h1>{profile?.name ?? authUser?.name ?? '사용자'}</h1>
         <p>{profile?.email ?? authUser?.email}</p>
@@ -72,6 +95,15 @@ export function ProfilePage() {
             <h2>내 정보 수정</h2>
           </div>
         </div>
+        <label>
+          프로필 사진
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            disabled={isUploadingImage}
+            onChange={handleProfileImageChange}
+          />
+        </label>
         <label>
           이름
           <input value={name} onChange={(event) => setName(event.target.value)} />

@@ -112,6 +112,13 @@ export class ApiClient {
     return this.patch('/users/me', body);
   }
 
+  uploadProfileImage(file: File): Promise<UserResponse> {
+    const body = new FormData();
+    body.append('file', file);
+
+    return this.post('/users/me/profile-image', body);
+  }
+
   getSpaces(params: {
     category?: SpaceCategory | '';
     keyword?: string;
