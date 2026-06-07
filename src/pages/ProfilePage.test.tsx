@@ -70,6 +70,14 @@ describe('ProfilePage', () => {
     uploadProfileImageMock.mockReset();
   });
 
+  it('loads weekly stats without the old period argument', async () => {
+    render(<ProfilePage />);
+
+    await screen.findByDisplayValue('010-1234-5678');
+
+    expect(getStatsMock).toHaveBeenCalledWith();
+  });
+
   it('uploads a selected profile image and shows the updated avatar', async () => {
     uploadProfileImageMock.mockResolvedValueOnce({
       ...profile,

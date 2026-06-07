@@ -18,7 +18,7 @@ export function ProfilePage() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([api.getMe(), api.getStats('WEEKLY')])
+    Promise.all([api.getMe(), api.getStats()])
       .then(([profileResponse, statResponse]) => {
         if (!cancelled) {
           setProfile(profileResponse);
