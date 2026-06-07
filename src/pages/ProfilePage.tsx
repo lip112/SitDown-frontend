@@ -1,5 +1,5 @@
 import { ChangeEvent, FormEvent, useEffect, useState } from 'react';
-import { BarChart3, TrendingUp, UserRound } from 'lucide-react';
+import { BarChart3, ImagePlus, TrendingUp, UserRound } from 'lucide-react';
 import { useAuth } from '../auth/AuthContext';
 import type { Affiliation, StatResponse, UserResponse } from '../api/types';
 import { affiliations } from '../data/catalog';
@@ -18,7 +18,7 @@ export function ProfilePage() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([api.getMe(), api.getStats('WEEKLY')])
+    Promise.all([api.getMe(), api.getStats()])
       .then(([profileResponse, statResponse]) => {
         if (!cancelled) {
           setProfile(profileResponse);
@@ -95,14 +95,25 @@ export function ProfilePage() {
             <h2>내 정보 수정</h2>
           </div>
         </div>
-        <label>
+        <label className={`file-upload-field${isUploadingImage ? ' is-disabled' : ''}`}>
           프로필 사진
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            disabled={isUploadingImage}
-            onChange={handleProfileImageChange}
-          />
+          <span className="file-upload-control">
+            <input
+              className="file-upload-input"
+              type="file"
+              aria-label="프로필 사진"
+              accept="image/jpeg,image/png,image/webp"
+              disabled={isUploadingImage}
+              onChange={handleProfileImageChange}
+            />
+            <span className="file-upload-button">
+              <ImagePlus size={16} aria-hidden="true" />
+              {isUploadingImage ? '업로드 중' : '사진 선택'}
+            </span>
+            <span className="file-upload-name">
+              {isUploadingImage ? '이미지 저장 중입니다' : '선택된 파일 없음'}
+            </span>
+          </span>
         </label>
         <label>
           이름
