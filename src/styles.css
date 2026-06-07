@@ -660,6 +660,73 @@ main {
   border: 2px solid var(--ink);
 }
 
+.file-upload-field {
+  cursor: pointer;
+}
+
+.file-upload-field.is-disabled {
+  cursor: not-allowed;
+}
+
+.file-upload-control {
+  width: 100%;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 7px;
+  background: #ffffff;
+}
+
+.file-upload-field:focus-within .file-upload-control {
+  border: 2px solid var(--ink);
+  padding: 6px;
+}
+
+.form-stack .file-upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.file-upload-button {
+  min-height: 40px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 0 14px;
+  background: var(--surface-soft);
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.file-upload-name {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-upload-field.is-disabled .file-upload-button {
+  color: var(--muted-soft);
+  background: var(--surface-strong);
+}
+
 .inline-field {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

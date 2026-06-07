@@ -70,6 +70,14 @@ describe('ProfilePage', () => {
     uploadProfileImageMock.mockReset();
   });
 
+  it('loads weekly stats without the old period argument', async () => {
+    render(<ProfilePage />);
+
+    await screen.findByDisplayValue('010-1234-5678');
+
+    expect(getStatsMock).toHaveBeenCalledWith();
+  });
+
   it('uploads a selected profile image and shows the updated avatar', async () => {
     uploadProfileImageMock.mockResolvedValueOnce({
       ...profile,
@@ -88,6 +96,16 @@ describe('ProfilePage', () => {
     });
     expect(await screen.findByText('프로필 사진이 저장되었습니다.')).toBeInTheDocument();
     expect(await screen.findByAltText('프로필 사진')).toHaveAttribute('src', '/uploads/profiles/user-1/profile.jpg');
+  });
+
+  it('shows a styled profile image picker', async () => {
+    render(<ProfilePage />);
+
+    await screen.findByDisplayValue('010-1234-5678');
+
+    expect(screen.getByLabelText('프로필 사진')).toHaveClass('file-upload-input');
+    expect(screen.getByText('사진 선택')).toBeInTheDocument();
+    expect(screen.getByText('선택된 파일 없음')).toBeInTheDocument();
   });
 
   it('shows an error when profile image upload fails', async () => {

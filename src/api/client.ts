@@ -22,6 +22,7 @@ import type {
 } from './types';
 
 type Fetcher = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+type StatDateRange = { from: string; to: string };
 
 const API_PATH_PREFIX = '/api';
 
@@ -168,8 +169,8 @@ export class ApiClient {
     return this.delete(`/reservations/${id}${queryString({ reason })}`);
   }
 
-  getStats(period: 'WEEKLY' | 'MONTHLY' | 'YEARLY' = 'WEEKLY'): Promise<StatResponse> {
-    return this.get(`/stats/me${queryString({ period })}`);
+  getStats(range: StatDateRange = currentWeekRange()): Promise<StatResponse> {
+    return this.get(`/stats/me${queryString(range)}`);
   }
 
   getNotices(params: {
@@ -253,6 +254,28 @@ function normalizeBaseUrl(baseUrl: string): string {
 function apiPath(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return normalizedPath.startsWith(`${API_PATH_PREFIX}/`) ? normalizedPath : `${API_PATH_PREFIX}${normalizedPath}`;
+}
+
+function currentWeekRange(date = new Date()): StatDateRange {
+  const today = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const dayOfWeek = today.getDay();
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const monday = new Date(today);
+  monday.setDate(today.getDate() + mondayOffset);
+
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+
+  return {
+    from: formatDate(monday),
+    to: formatDate(sunday),
+  };
+}
+
+function formatDate(date: Date): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function queryString(params: Record<string, unknown>): string {

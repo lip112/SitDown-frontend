@@ -4,6 +4,7 @@ import { ApiClient } from './client';
 describe('ApiClient', () => {
   afterEach(() => {
     vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('adds bearer token and parses successful JSON responses', async () => {
@@ -90,6 +91,52 @@ describe('ApiClient', () => {
     );
     expect((init?.body as FormData).get('file')).toBe(file);
     expect(init?.headers).not.toHaveProperty('Content-Type');
+  });
+
+  it('requests current week stats with from and to dates', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 4, 21, 12));
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        period: 'WEEKLY',
+        from: '2026-05-18',
+        to: '2026-05-24',
+        totalMinutes: 0,
+        comparedToPreviousMinutes: 0,
+        daily: [],
+        topSpaces: [],
+      }),
+    });
+    const client = new ApiClient({ baseUrl: '/api', fetcher: fetchMock });
+
+    await client.getStats();
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/stats/me?from=2026-05-18&to=2026-05-24', expect.any(Object));
+  });
+
+  it('requests stats with an explicit date range', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({
+        period: 'CUSTOM',
+        from: '2026-05-01',
+        to: '2026-05-03',
+        totalMinutes: 0,
+        comparedToPreviousMinutes: 0,
+        daily: [],
+        topSpaces: [],
+      }),
+    });
+    const client = new ApiClient({ baseUrl: '/api', fetcher: fetchMock });
+
+    await client.getStats({ from: '2026-05-01', to: '2026-05-03' });
+
+    expect(fetchMock).toHaveBeenCalledWith('/api/stats/me?from=2026-05-01&to=2026-05-03', expect.any(Object));
   });
 
   it('returns undefined for no-content responses', async () => {
