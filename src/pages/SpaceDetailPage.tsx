@@ -39,6 +39,10 @@ export function SpaceDetailPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const mainImage = useMemo(() => spaceImage(space?.images?.[0], 0), [space?.images]);
+  const today = useMemo(() => getDefaultDateTimeLocal().slice(0, 10), []);
+  const reservationDate = startAt.slice(0, 10);
+  const startTime = startAt.slice(11, 16);
+  const endTime = endAt.slice(11, 16);
 
   const refreshSeatLayout = useCallback(async () => {
     if (!id) {
@@ -69,7 +73,7 @@ export function SpaceDetailPage() {
     Promise.all([
       api.getSpace(id),
       api.getSeats(id, toKstOffsetDateTime(startAt)),
-      api.getCongestion(id),
+      api.getCongestion(id, reservationDate),
     ])
       .then(([spaceResponse, seatsResponse, congestionResponse]) => {
         if (!cancelled) {
@@ -145,6 +149,32 @@ export function SpaceDetailPage() {
     } finally {
       setSyncingSeats(false);
     }
+  }
+
+  function handleReservationDateChange(nextDate: string) {
+    if (!nextDate) {
+      return;
+    }
+
+    const endsOnNextDate = endAt.slice(0, 10) !== reservationDate;
+    setStartAt(`${nextDate}T${startTime}`);
+    setEndAt(`${endsOnNextDate ? nextDateValue(nextDate) : nextDate}T${endTime}`);
+  }
+
+  function handleStartTimeChange(nextTime: string) {
+    if (nextTime) {
+      setStartAt(`${reservationDate}T${nextTime}`);
+    }
+  }
+
+  function handleEndTimeChange(nextTime: string) {
+    if (!nextTime) {
+      return;
+    }
+
+    const endsAtNextMidnight = space?.closeTime.startsWith('00:00') && nextTime === '00:00';
+    const endDate = endsAtNextMidnight ? nextDateValue(reservationDate) : reservationDate;
+    setEndAt(`${endDate}T${nextTime}`);
   }
 
   async function handleReserve(event: FormEvent) {
@@ -278,6 +308,7 @@ export function SpaceDetailPage() {
         <aside className="reservation-card">
           <form onSubmit={handleReserve}>
             <h2>좌석 예약</h2>
+            <p className="muted">예약 날짜와 시작 시간을 바꾸면 해당 시각의 좌석 상태가 갱신됩니다.</p>
             <p className="muted">{selectedSeat ? `${selectedSeat.label} 좌석 선택됨` : '예약 가능한 좌석을 선택하세요.'}</p>
             {selectedSeat && (
               <div className="selected-seat-card">
@@ -291,12 +322,22 @@ export function SpaceDetailPage() {
               </div>
             )}
             <label>
+              예약 날짜
+              <input
+                type="date"
+                value={reservationDate}
+                min={today}
+                onChange={(event) => handleReservationDateChange(event.target.value)}
+                required
+              />
+            </label>
+            <label>
               시작 시간
-              <input type="datetime-local" value={startAt} onChange={(event) => setStartAt(event.target.value)} required />
+              <input type="time" value={startTime} onChange={(event) => handleStartTimeChange(event.target.value)} required />
             </label>
             <label>
               종료 시간
-              <input type="datetime-local" value={endAt} onChange={(event) => setEndAt(event.target.value)} required />
+              <input type="time" value={endTime} onChange={(event) => handleEndTimeChange(event.target.value)} required />
             </label>
             {notice && <p className={notice.includes('완료') ? 'form-success' : 'form-error'}>{notice}</p>}
             <button type="submit" className="primary-button full" disabled={submitting || !selectedSeat}>
@@ -322,4 +363,10 @@ function isConflictError(error: unknown): boolean {
     && error !== null
     && 'status' in error
     && (error as { status?: unknown }).status === 409;
+}
+
+function nextDateValue(value: string): string {
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + 1));
+  return date.toISOString().slice(0, 10);
 }

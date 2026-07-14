@@ -94,6 +94,103 @@ describe('SpaceDetailPage', () => {
     expect(screen.getByRole('button', { name: 'A01' })).toBeDisabled();
   });
 
+  it('reloads seats for the selected reservation date and start time', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date('2026-07-14T09:00:00+09:00'));
+    getSeatsMock
+      .mockResolvedValueOnce(seatLayout('AVAILABLE'))
+      .mockResolvedValueOnce(seatLayout('RESERVED'));
+    renderSpaceDetailPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'A01' }));
+    fireEvent.change(screen.getByLabelText('예약 날짜'), {
+      target: { value: '2026-07-20' },
+    });
+
+    await waitFor(() => {
+      expect(getSeatsMock).toHaveBeenLastCalledWith(
+        'space-1',
+        '2026-07-20T09:30:00+09:00',
+      );
+      expect(getCongestionMock).toHaveBeenLastCalledWith('space-1', '2026-07-20');
+    });
+    expect(await screen.findByRole('button', { name: 'A01' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '예약하기' })).toBeDisabled();
+  });
+
+  it('creates a reservation with the selected date and local KST times', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date('2026-07-14T09:00:00+09:00'));
+    getSeatsMock.mockResolvedValue(seatLayout('AVAILABLE'));
+    createReservationMock.mockResolvedValueOnce({});
+    renderSpaceDetailPage();
+
+    await screen.findByRole('button', { name: 'A01' });
+    fireEvent.change(screen.getByLabelText('예약 날짜'), {
+      target: { value: '2026-07-20' },
+    });
+    await waitFor(() => {
+      expect(getSeatsMock).toHaveBeenLastCalledWith(
+        'space-1',
+        '2026-07-20T09:30:00+09:00',
+      );
+    });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'A01' }));
+    fireEvent.click(screen.getByRole('button', { name: '예약하기' }));
+
+    await waitFor(() => {
+      expect(createReservationMock).toHaveBeenCalledWith({
+        seatId: 'seat-a01',
+        startAt: '2026-07-20T09:30:00',
+        endAt: '2026-07-20T11:30:00',
+      });
+    });
+  });
+
+  it('uses the next day when a midnight-closing space ends at 00:00', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime(new Date('2026-07-14T09:00:00+09:00'));
+    getSpaceMock.mockResolvedValue({ ...spaceDetail, closeTime: '00:00:00' });
+    getSeatsMock.mockResolvedValue(seatLayout('AVAILABLE'));
+    createReservationMock.mockResolvedValueOnce({});
+    renderSpaceDetailPage();
+
+    await screen.findByRole('button', { name: 'A01' });
+    fireEvent.change(screen.getByLabelText('예약 날짜'), {
+      target: { value: '2026-07-20' },
+    });
+    await waitFor(() => {
+      expect(getSeatsMock).toHaveBeenLastCalledWith(
+        'space-1',
+        '2026-07-20T09:30:00+09:00',
+      );
+    });
+
+    fireEvent.change(await screen.findByLabelText('시작 시간'), {
+      target: { value: '22:00' },
+    });
+    await waitFor(() => {
+      expect(getSeatsMock).toHaveBeenLastCalledWith(
+        'space-1',
+        '2026-07-20T22:00:00+09:00',
+      );
+    });
+    fireEvent.change(await screen.findByLabelText('종료 시간'), {
+      target: { value: '00:00' },
+    });
+    fireEvent.click(await screen.findByRole('button', { name: 'A01' }));
+    fireEvent.click(screen.getByRole('button', { name: '예약하기' }));
+
+    await waitFor(() => {
+      expect(createReservationMock).toHaveBeenCalledWith({
+        seatId: 'seat-a01',
+        startAt: '2026-07-20T22:00:00',
+        endAt: '2026-07-21T00:00:00',
+      });
+    });
+  });
+
   it('refreshes seat status after a reservation conflict', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date('2026-05-19T09:00:00+09:00'));

@@ -144,11 +144,7 @@ export function getOccupancyRate(totalSeats: number, availableSeats: number): nu
 }
 
 export function getDefaultDateTimeLocal(addMinutes = 0): string {
-  const date = new Date();
-  date.setMinutes(date.getMinutes() + addMinutes);
-  date.setSeconds(0, 0);
-
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60_000);
-  return local.toISOString().slice(0, 16);
+  const kstOffsetMinutes = 9 * 60;
+  const kstDate = new Date(Date.now() + (kstOffsetMinutes + addMinutes) * 60_000);
+  return kstDate.toISOString().slice(0, 16);
 }

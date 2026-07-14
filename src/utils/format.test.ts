@@ -1,14 +1,19 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   categoryLabel,
   formatDateTime,
   formatMinutes,
   getCongestionMeta,
+  getDefaultDateTimeLocal,
   normalizePage,
   toApiLocalDateTime,
 } from './format';
 
 describe('format utilities', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('formats minutes into Korean hour and minute text', () => {
     expect(formatMinutes(0)).toBe('0분');
     expect(formatMinutes(45)).toBe('45분');
@@ -25,6 +30,13 @@ describe('format utilities', () => {
     expect(formatDateTime('2026-05-14T09:30:00+09:00')).toContain('2026.');
     expect(toApiLocalDateTime('2026-05-14T09:30')).toBe('2026-05-14T09:30:00');
     expect(toApiLocalDateTime('')).toBe('');
+  });
+
+  it('builds reservation defaults from KST independently of the browser timezone', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-07-14T00:00:00Z'));
+
+    expect(getDefaultDateTimeLocal(30)).toBe('2026-07-14T09:30');
   });
 
   it('normalizes missing pagination fields without changing content', () => {

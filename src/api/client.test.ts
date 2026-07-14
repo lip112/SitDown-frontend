@@ -139,6 +139,23 @@ describe('ApiClient', () => {
     expect(fetchMock).toHaveBeenCalledWith('/api/stats/me?from=2026-05-01&to=2026-05-03', expect.any(Object));
   });
 
+  it('encodes the selected KST seat snapshot time', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      headers: new Headers({ 'content-type': 'application/json' }),
+      json: async () => ({ spaceId: 'space-1', rows: 0, columns: 0, seats: [] }),
+    });
+    const client = new ApiClient({ baseUrl: '/api', fetcher: fetchMock });
+
+    await client.getSeats('space-1', '2026-07-20T09:00:00+09:00');
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/spaces/space-1/seats?at=2026-07-20T09%3A00%3A00%2B09%3A00',
+      expect.any(Object),
+    );
+  });
+
   it('returns undefined for no-content responses', async () => {
     const fetchMock = vi.fn().mockResolvedValue({
       ok: true,
